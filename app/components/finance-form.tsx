@@ -195,7 +195,28 @@ export default function DataPointForm() {
       (promptErrors || []).some((error) => error.includes("may contain PII")) ||
       (answerErrors || []).some((error) => error.includes("may contain PII"));
 
-    if (promptErrors?.length || answerErrors?.length) {
+    const documentErrors = formData.documents.reduce(
+      (acc, doc, index) => {
+        const docErrors: any = {
+          secPageLink: state.errors?.[`documents.${index}.secPageLink`] || [],
+          datePublished:
+            state.errors?.[`documents.${index}.datePublished`] || [],
+          file: state.errors?.[`documents.${index}.file`] || [],
+        };
+        return {
+          secPageLink: acc.secPageLink.concat(docErrors.secPageLink),
+          datePublished: acc.datePublished.concat(docErrors.datePublished),
+          file: acc.file.concat(docErrors.file),
+        };
+      },
+      { secPageLink: [], datePublished: [], file: [] }
+    );
+
+    const hasDocumentErrors = Object.values(documentErrors).some(
+      (errors) => errors.length
+    );
+
+    if ((promptErrors?.length || answerErrors?.length) && !hasDocumentErrors) {
       if (
         hasPIIErrors &&
         (!promptErrors.length ||
@@ -330,6 +351,7 @@ export default function DataPointForm() {
                   className="peer block w-full rounded-md border border-gray-200 py-2 pl-4 text-sm outline-2 placeholder:text-gray-500 mb-2 bg-gray-800 text-white"
                   value={fact.fact}
                   onChange={(e) => handleSupportingFactChange(index, e)}
+                  required
                 />
                 <ErrorMessage
                   state={state}
@@ -343,6 +365,7 @@ export default function DataPointForm() {
                   className="peer block w-full rounded-md border border-gray-200 py-2 pl-4 text-sm outline-2 placeholder:text-gray-500 mb-2 bg-gray-800 text-white"
                   value={fact.source}
                   onChange={(e) => handleSupportingFactChange(index, e)}
+                  required
                 />
                 <ErrorMessage
                   state={state}
@@ -447,7 +470,6 @@ export default function DataPointForm() {
             >
               Add Document
             </button>
-            <ErrorMessage state={state} field="documents" />
           </div>
           <SubmitButton pending={pending} />
         </div>
